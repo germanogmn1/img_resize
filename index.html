@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        text-align: center;
+      }
+      img {
+        margin: 10px;
+        display: inline-block;
+        border: 5px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <form>
+      <input type="file" name="file" id="thefile">
+    </form>
+    <div id="result"></div>
+    <script src="img_resize.js"></script>
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.min.js"
+      integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+      crossorigin="anonymous"></script>
+    <script>
+      $('#thefile').change(function () {
+        var file = this.files[0];
+        var $result = $('#result');
+
+        ImgResize.imageFromFile(file, function (sourceImage) {
+          $result.empty();
+          $result.append(
+            $('<h3>source: '+file.name+' '+file.type+' '+sourceImage.naturalWidth+'x'+sourceImage.naturalHeight+'</h3>')
+          );
+
+          var imgVersions = [
+            [400, 400],
+            [200, 100],
+            [100, 300]
+          ];
+          for (var i = 0; i < imgVersions.length; i++) {
+            var versionWidth = imgVersions[i][0];
+            var versionHeight = imgVersions[i][1];
+
+            var crop = ImgResize.centeredImageCrop(sourceImage.naturalWidth, sourceImage.naturalHeight, versionWidth, versionHeight);
+
+            var start = new Date();
+            var resultCanvas = ImgResize.resizeImage(sourceImage, crop.x, crop.y, crop.width, crop.height, versionWidth, versionHeight);
+            var duration = (new Date() - start);
+
+            $result.append($('<p>'+versionWidth+'x'+versionHeight+' '+duration+'ms</p>'));
+            $result.append(ImgResize.imageFromCanvas(resultCanvas));
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
