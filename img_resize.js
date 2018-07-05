@@ -60,6 +60,7 @@
     return contributors;
   }
 
+  // Resizes srcImg into dstImg, with the dimensions of dstImg
   // srcImg and dstImg must be of ImageData type
   function resizeImageData(srcImg, dstImg) {
     var srcData = srcImg.data;
@@ -118,12 +119,14 @@
     }
   }
 
+  // creates a HTMLImageElement from a canvas object
   function imageFromCanvas(canvas) {
     var img = document.createElement('img');
     img.src = canvas.toDataURL('image/jpeg');
     return img;
   }
 
+  // create and load a HTMLImageElement from a File object
   function imageFromFile(file, callback) {
     var img = new Image();
     img.onload = function () { callback(img); }
