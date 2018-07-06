@@ -62,16 +62,7 @@
 
   // Resizes srcImg into dstImg, with the dimensions of dstImg
   // srcImg and dstImg must be of ImageData type
-  function resizeImageData(srcImg, dstImg) {
-    var srcData = srcImg.data;
-    var dstData = dstImg.data;
-
-    var srcWidth = srcImg.width;
-    var srcHeight = srcImg.height;
-
-    var dstWidth = dstImg.width;
-    var dstHeight = dstImg.height;
-
+  function resizeImageData(srcData, srcWidth, srcHeight, dstData, dstWidth, dstHeight) {
     var contributorsX = makeContributorList(dstWidth, srcWidth, BICUBIC_SUPPORT);
     var contributorsY = makeContributorList(dstHeight, srcHeight, BICUBIC_SUPPORT);
 
@@ -166,7 +157,7 @@
   // sourceWidth, sourceHeight: size of the sub-rectangle of the source image
   // destWidth, destHeight: size of the resized image
   // returns a HTMLCanvasElement containing the resized image
-  function resizeImage(image, sourceX, sourceY, sourceWidth, sourceHeight, destWidth, destHeight) {
+  function resizeImageBlocking(image, sourceX, sourceY, sourceWidth, sourceHeight, destWidth, destHeight) {
     // create source image canvas
     var canvas = document.createElement('canvas');
     canvas.width = sourceWidth;
@@ -179,21 +170,75 @@
     // get ImageData and perform the resize
     var sourceImg = ctx.getImageData(0, 0, sourceWidth, sourceHeight);
     var destImg = ctx.createImageData(destWidth, destHeight);
-    resizeImageData(sourceImg, destImg);
+    resizeImageData(sourceImg.data, sourceImg.width, sourceImg.height, destImg.data, destImg.width, destImg.height);
 
     // resize the canvas and put the resized image on it
-    ctx.canvas.width = destWidth;
-    ctx.canvas.height = destHeight;
+    canvas.width = destWidth;
+    canvas.height = destHeight;
     ctx.putImageData(destImg, 0, 0);
 
     return canvas;
   }
 
-  window.ImgResize = {
-    resizeImage: resizeImage,
+  self.ImgResize = {
     resizeImageData: resizeImageData,
     imageFromCanvas: imageFromCanvas,
     imageFromFile: imageFromFile,
     centeredImageCrop: centeredImageCrop,
   };
+
+  if (typeof(document) === 'undefined') {
+    // imported from worker
+  } else if (self.Worker) {
+    var worker = new Worker('./img_resize_worker.js');
+    var workerResultQueue = [];
+
+    self.ImgResize.resizeImage = function (image, sourceX, sourceY, sourceWidth, sourceHeight, destWidth, destHeight, callback) {
+      // create source image canvas
+      var canvas = document.createElement('canvas');
+      canvas.width = sourceWidth;
+      canvas.height = sourceHeight;
+      var ctx = canvas.getContext('2d');
+
+      // draw image cropped in canvas
+      ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
+
+      // get ImageData and perform the resize
+      var sourceImg = ctx.getImageData(0, 0, sourceWidth, sourceHeight);
+      worker.postMessage({
+        srcDataBuffer: sourceImg.data.buffer,
+        srcWidth:      sourceWidth,
+        srcHeight:     sourceHeight,
+        dstWidth:      destWidth,
+        dstHeight:     destHeight
+      }, [sourceImg.data.buffer]);
+
+      workerResultQueue.push({
+        canvas:    canvas,
+        ctx:       ctx,
+        dstWidth:  destWidth,
+        dstHeight: destHeight,
+        callback:  callback
+      });
+    };
+
+    worker.onmessage = function (event) {
+      var result = workerResultQueue.shift();
+
+      var dstData = result.ctx.createImageData(result.dstWidth, result.dstHeight);
+      dstData.data.set(event.data, 0);
+
+      // resize the canvas and put the resized image on it
+      result.canvas.width = result.dstWidth;
+      result.canvas.height = result.dstHeight;
+      result.ctx.putImageData(dstData, 0, 0);
+
+      result.callback(result.canvas);
+    };
+  } else {
+    self.ImgResize.resizeImage = function (image, sourceX, sourceY, sourceWidth, sourceHeight, destWidth, destHeight, callback) {
+      var result = resizeImageBlocking(image, sourceX, sourceY, sourceWidth, sourceHeight, destWidth, destHeight);
+      callback(result);
+    };
+  }
 })();

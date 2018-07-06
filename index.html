@@ -49,11 +49,15 @@
             var crop = ImgResize.centeredImageCrop(sourceImage.naturalWidth, sourceImage.naturalHeight, versionWidth, versionHeight);
 
             var start = new Date();
-            var resultCanvas = ImgResize.resizeImage(sourceImage, crop.x, crop.y, crop.width, crop.height, versionWidth, versionHeight);
-            var duration = (new Date() - start);
+            ImgResize.resizeImage(
+              sourceImage, crop.x, crop.y, crop.width, crop.height, versionWidth, versionHeight,
+              function (resultCanvas) {
+                var duration = (new Date() - start);
+                start = new Date();
 
-            $result.append($('<p>'+versionWidth+'x'+versionHeight+' '+duration+'ms</p>'));
-            $result.append(ImgResize.imageFromCanvas(resultCanvas));
+                $result.append($('<p>'+resultCanvas.width+'x'+resultCanvas.height+' '+duration+'ms</p>'));
+                $result.append(ImgResize.imageFromCanvas(resultCanvas));
+              });
           }
         });
       });
