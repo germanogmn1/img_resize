@@ -8,7 +8,7 @@ Resize images on browser with bi-cubic filter.
 API
 ---
 
-High-level resize:
+High-level API:
 
 ```javascript
 // image: image to be resized, must be a CanvasImageSource (HTMLImageElement, SVGImageElement, HTMLVideoElement, HTMLCanvasElement, ImageBitmap, OffscreenCanvas)
@@ -43,14 +43,4 @@ ImgResize.resizeImageData(srcImg, dstImg)
 ```
 
 Usage Example
--------------
-
-```javascript
-var file = document.querySelector('input[type=file]').files[0];
-
-ImgResize.imageFromFile(file, function (img) {
-  var canvas = ImgResize.resizeImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 800, 600);
-  var result = ImgResize.imageFromCanvas(canvas);
-  document.body.appendChild(result);
-});
-```
+---
