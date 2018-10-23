@@ -43,4 +43,13 @@ ImgResize.resizeImageData(srcImg, dstImg)
 ```
 
 Usage Example
----
+-------------
+
+```javascript
+var file = document.querySelector('input[type=file]').files[0];
+ImgResize.imageFromFile(file, function (img) {
+  var canvas = ImgResize.resizeImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 800, 600);
+  var result = ImgResize.imageFromCanvas(canvas);
+  document.body.appendChild(result);
+});
+```
